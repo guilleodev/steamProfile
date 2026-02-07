@@ -1,0 +1,222 @@
+.bg-grid {
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, .06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, .06) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, .9) 0%, rgba(0, 0, 0, .6) 55%, rgba(0, 0, 0, 0) 85%);
+    -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, .9) 0%, rgba(0, 0, 0, .6) 55%, rgba(0, 0, 0, 0) 85%);
+}
+
+.soft-glow {
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, .06) inset,
+        0 12px 40px rgba(0, 0, 0, .55);
+}
+
+:root {
+    --ease: cubic-bezier(.16, 1, .3, 1);
+}
+
+.bg-grid {
+    animation: gridMove 60s linear infinite;
+    will-change: background-position;
+}
+
+@keyframes gridMove {
+    0% {
+        background-position: 0 0, 0 0;
+    }
+
+    100% {
+        background-position: 420px 0, 0 420px;
+    }
+}
+
+.orb {
+    animation: orbFloat var(--dur, 12s) ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes orbFloat {
+
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(var(--x, 24px), var(--y, -18px), 0) scale(1.06);
+    }
+}
+
+.shimmer {
+    position: relative;
+    overflow: hidden;
+    transform: translateZ(0);
+}
+
+.shimmer::after {
+    content: "";
+    position: absolute;
+    inset: -60% -80%;
+    background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .14) 48%, transparent 62%);
+    transform: translateX(-55%);
+    animation: shimmer 6s var(--ease) infinite;
+    animation-delay: 10s;
+    pointer-events: none;
+    opacity: 0;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-55%);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: .7;
+    }
+
+    40% {
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(55%);
+        opacity: 0;
+    }
+}
+
+.border-flow {
+    position: relative;
+}
+
+.border-flow::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(90deg,
+            rgba(52, 211, 153, .35),
+            rgba(34, 211, 238, .35),
+            rgba(167, 139, 250, .35),
+            rgba(52, 211, 153, .35));
+    background-size: 300% 100%;
+    animation: borderFlow 6s linear infinite;
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+@keyframes borderFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 300% 50%;
+    }
+}
+
+.breath {
+    animation: breath 3.6s ease-in-out infinite;
+}
+
+@keyframes breath {
+
+    0%,
+    100% {
+        filter: brightness(1);
+        transform: translateY(0);
+    }
+
+    50% {
+        filter: brightness(1.06);
+        transform: translateY(-1px);
+    }
+}
+
+.reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: fadeUp .7s var(--ease) forwards;
+}
+
+.delay-1 {
+    animation-delay: .08s;
+}
+
+.delay-2 {
+    animation-delay: .16s;
+}
+
+.delay-3 {
+    animation-delay: .24s;
+}
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.lift {
+    transition: transform .35s var(--ease), border-color .35s var(--ease), background-color .35s var(--ease);
+}
+
+.lift:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, .18);
+}
+
+#card:not(.hidden),
+#stats:not(.hidden),
+#topGamesSection:not(.hidden),
+#recentGamesSection:not(.hidden),
+#achSection:not(.hidden) {
+    animation: popIn .55s var(--ease) both;
+    transform-origin: top center;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(.985);
+        filter: blur(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .bg-grid,
+    .orb,
+    .shimmer::after,
+    .breath,
+    .border-flow::before,
+    .reveal,
+    #card:not(.hidden),
+    #stats:not(.hidden),
+    #topGamesSection:not(.hidden),
+    #recentGamesSection:not(.hidden),
+    #achSection:not(.hidden) {
+        animation: none !important;
+    }
+
+    .lift {
+        transition: none !important;
+    }
+}
