@@ -71,7 +71,7 @@ const I18N = {
   es: {
     badge: "SteamProfile → info + juegos",
     intro:
-      'Pega tu <span class="text-zinc-200 font-medium">vanity</span>, <span class="text-zinc-200 font-medium">SteamID64</span> o la <span class="text-zinc-200 font-medium">URL del perfil</span>. Ej: <span class="text-zinc-200">mrpollos</span> o <span class="text-zinc-200">https://steamcommunity.com/id/<span class="text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-blue-300 to-violet-300">mrpollos</span></span>',
+      'Pega tu <span class="text-zinc-200 font-medium">vanity</span>, <span class="text-zinc-200 font-medium">SteamID64</span> o la <span class="text-zinc-200 font-medium">URL del perfil</span>. Ej: <span class="text-zinc-200">pep</span> o <span class="text-zinc-200">https://steamcommunity.com/id/<span class="text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-blue-300 to-violet-300">pep</span></span>',
     inputPlaceholder: "vanity / steamid64 / url",
     btnGenerate: "Buscar",
 
@@ -145,7 +145,7 @@ const I18N = {
   en: {
     badge: "SteamProfile → card + stats",
     intro:
-      'Paste a <span class="text-zinc-200 font-medium">vanity</span>, <span class="text-zinc-200 font-medium">SteamID64</span> or a <span class="text-zinc-200 font-medium">profile URL</span>. e.g. <span class="text-zinc-200">mrpollos</span> or <span class="text-zinc-200">https://steamcommunity.com/id/<span class="text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-blue-300 to-violet-300">mrpollos</span></span>',
+      'Paste a <span class="text-zinc-200 font-medium">vanity</span>, <span class="text-zinc-200 font-medium">SteamID64</span> or a <span class="text-zinc-200 font-medium">profile URL</span>. e.g. <span class="text-zinc-200">pep</span> or <span class="text-zinc-200">https://steamcommunity.com/id/<span class="text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-blue-300 to-violet-300">pep</span></span>',
     inputPlaceholder: "vanity / steamid64 / url",
     btnGenerate: "Search",
 
