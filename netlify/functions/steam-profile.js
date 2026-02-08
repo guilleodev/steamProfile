@@ -1,55 +1,139 @@
-exports.handler = async (event) => {
-  try {
-    const { type, value } = event.queryStringParameters || {};
+const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
 
-    if (!type || !value) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Faltan parámetros (type, value)." }),
-      };
+const ALLOWED_ORIGINS = null;
+
+const CACHE_SECONDS = 300;
+
+// Límites básicos anti-abuso
+const MAX_VALUE_LEN = 120;
+
+function corsHeaders(origin) {
+
+  if (!origin) return {};
+
+  if (ALLOWED_ORIGINS && !ALLOWED_ORIGINS.has(origin)) {
+    // Origen no permitido
+    return { "Access-Control-Allow-Origin": "null", Vary: "Origin" };
+  }
+
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    Vary: "Origin",
+  };
+}
+
+function json(statusCode, body, origin, extraHeaders = {}) {
+  return {
+    statusCode,
+    headers: {
+      ...JSON_HEADERS,
+      ...corsHeaders(origin),
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
+      ...extraHeaders,
+    },
+    body: JSON.stringify(body),
+  };
+}
+
+function clampStr(x) {
+  return String(x ?? "").trim();
+}
+
+function parseInput(typeRaw, valueRaw) {
+  const type = clampStr(typeRaw).toLowerCase();
+  let value = clampStr(valueRaw);
+
+  if (!type || !value) return { error: "Faltan parámetros (type, value)." };
+  if (value.length > MAX_VALUE_LEN) return { error: "El parámetro value es demasiado largo." };
+
+  const isUrl = /^https?:\/\/steamcommunity\.com\/(id|profiles)\//i.test(value);
+  if (isUrl) {
+    try {
+      const u = new URL(value);
+      const parts = u.pathname.split("/").filter(Boolean);
+      const kind = parts[0];
+      const slug = parts[1] || "";
+      if (kind === "profiles") return { type: "steamid", value: slug };
+      if (kind === "id") return { type: "vanity", value: slug };
+    } catch (_) {
+  
     }
+  }
+
+  if (type !== "vanity" && type !== "steamid") {
+    return { error: "type inválido. Usa 'vanity' o 'steamid' (o pasa una URL steamcommunity)." };
+  }
+
+  if (type === "steamid") {
+    if (!/^\d{16,20}$/.test(value)) return { error: "steamid inválido (debe ser numérico, tipo SteamID64)." };
+  } else {
+    if (!/^[a-zA-Z0-9_-]{2,64}$/.test(value)) return { error: "vanity inválido (usa letras/números/_-)." };
+  }
+
+  return { type, value };
+}
+
+async function steamFetch(url, timeoutMs = 9000) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const r = await fetch(url, { signal: controller.signal });
+    const text = await r.text();
+    let j = null;
+    try {
+      j = text ? JSON.parse(text) : null;
+    } catch (_) {
+      j = null;
+    }
+    return { ok: r.ok, status: r.status, json: j };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+exports.handler = async (event) => {
+  const origin = event.headers?.origin || event.headers?.Origin || "";
+
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 204,
+      headers: { ...corsHeaders(origin) },
+      body: "",
+    };
+  }
+
+  try {
+    const { type: typeRaw, value: valueRaw } = event.queryStringParameters || {};
+    const parsed = parseInput(typeRaw, valueRaw);
+    if (parsed.error) return json(400, { error: parsed.error }, origin);
 
     const key = process.env.STEAM_API_KEY;
     if (!key) {
-      return {
-        statusCode: 500,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          error: "Falta STEAM_API_KEY (revisa .env y reinicia netlify dev).",
-        }),
-      };
+      return json(
+        500,
+        { error: "Falta STEAM_API_KEY (configura la variable en Netlify o en tu .env local)." },
+        origin
+      );
     }
 
-    const steam = async (url) => {
-      const r = await fetch(url);
-      const j = await r.json();
-      return { ok: r.ok, status: r.status, json: j };
-    };
+    let steamid = parsed.value;
 
-    let steamid = String(value).trim();
-
-    // 0) Resolve vanity -> steamid64
-    if (type === "vanity") {
+    if (parsed.type === "vanity") {
       const resolveUrl =
         `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/` +
         `?key=${encodeURIComponent(key)}&vanityurl=${encodeURIComponent(steamid)}`;
 
-      const r1 = await steam(resolveUrl);
-      if (r1.json?.response?.success !== 1) {
-        return {
-          statusCode: 404,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ error: "Usuario vanity no encontrado." }),
-        };
+      const r1 = await steamFetch(resolveUrl);
+      if (r1.json?.response?.success !== 1 || !r1.json?.response?.steamid) {
+        return json(404, { error: "Usuario vanity no encontrado." }, origin, {
+          "Cache-Control": "public, max-age=60",
+        });
       }
       steamid = r1.json.response.steamid;
-    } else if (type !== "steamid") {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "type inválido. Usa 'vanity' o 'steamid'." }),
-      };
     }
 
     // 1) Profile
@@ -57,14 +141,12 @@ exports.handler = async (event) => {
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/` +
       `?key=${encodeURIComponent(key)}&steamids=${encodeURIComponent(steamid)}`;
 
-    const p = await steam(profileUrl);
+    const p = await steamFetch(profileUrl);
     const player = p.json?.response?.players?.[0];
     if (!player) {
-      return {
-        statusCode: 404,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "No se encontró el perfil." }),
-      };
+      return json(404, { error: "No se encontró el perfil." }, origin, {
+        "Cache-Control": "public, max-age=60",
+      });
     }
 
     // 2) Level
@@ -74,13 +156,14 @@ exports.handler = async (event) => {
 
     let level = null;
     try {
-      const lvl = await steam(levelUrl);
+      const lvl = await steamFetch(levelUrl);
       if (lvl.json?.response && typeof lvl.json.response.player_level === "number") {
         level = lvl.json.response.player_level;
       }
     } catch (_) {
-      
+
     }
+
     // 2.5) Badges
     const badgesUrl =
       `https://api.steampowered.com/IPlayerService/GetBadges/v1/` +
@@ -90,7 +173,7 @@ exports.handler = async (event) => {
     let badgesPrivacy = "ok";
 
     try {
-      const b = await steam(badgesUrl);
+      const b = await steamFetch(badgesUrl);
       const r = b.json?.response;
 
       if (!r || !Array.isArray(r.badges)) {
@@ -102,7 +185,7 @@ exports.handler = async (event) => {
           .slice(0, 6)
           .map((x) => ({
             badgeid: x.badgeid,
-            appid: x.appid || null,          // 👈 AÑADIR
+            appid: x.appid || null,
             level: x.level || 0,
             completion_time: x.completion_time || null,
             xp: x.xp || 0,
@@ -132,7 +215,7 @@ exports.handler = async (event) => {
     let gamesPrivacy = "ok";
 
     try {
-      const g = await steam(ownedUrl);
+      const g = await steamFetch(ownedUrl);
 
       if (!g.ok) {
         gamesPrivacy = `error_${g.status}`;
@@ -151,19 +234,17 @@ exports.handler = async (event) => {
           );
 
           const top = sorted.slice(0, 10);
-
           const all = sorted.map((x) => ({
             appid: x.appid,
             name: x.name,
             playtime_forever: x.playtime_forever || 0,
           }));
-
           const ids = all.map((x) => x.appid);
 
           games = {
             total_count: typeof count === "number" ? count : arr.length,
             total_hours: totalHours,
-            ids,   
+            ids,
             all,
             top: top.map((x) => ({
               appid: x.appid,
@@ -173,8 +254,8 @@ exports.handler = async (event) => {
           };
         }
       }
-    } catch (e) {
-      gamesPrivacy = `error_exception`;
+    } catch (_) {
+      gamesPrivacy = "error_exception";
     }
 
     // 4) Recently played
@@ -184,7 +265,7 @@ exports.handler = async (event) => {
 
     let recent = { games: [] };
     try {
-      const rg = await steam(recentUrl);
+      const rg = await steamFetch(recentUrl);
       const arr = rg.json?.response?.games;
       if (Array.isArray(arr)) {
         recent.games = arr
@@ -198,7 +279,6 @@ exports.handler = async (event) => {
           }));
       }
     } catch (_) {
-      // ignore
     }
 
     // 5) Friends list
@@ -210,7 +290,7 @@ exports.handler = async (event) => {
     let friendsPrivacy = "ok";
 
     try {
-      const fr = await steam(friendsUrl);
+      const fr = await steamFetch(friendsUrl);
       const list = fr.json?.friendslist?.friends;
 
       if (!Array.isArray(list)) {
@@ -224,7 +304,7 @@ exports.handler = async (event) => {
             `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/` +
             `?key=${encodeURIComponent(key)}&steamids=${encodeURIComponent(ids.join(","))}`;
 
-          const sum = await steam(summariesUrl);
+          const sum = await steamFetch(summariesUrl);
           const players = sum.json?.response?.players;
           if (Array.isArray(players)) {
             online = players.filter((pl) => pl.personastate && pl.personastate > 0).length;
@@ -237,7 +317,6 @@ exports.handler = async (event) => {
       friendsPrivacy = "private";
     }
 
-    // Final payload
     const payload = {
       profile: {
         steamid: player.steamid,
@@ -250,25 +329,22 @@ exports.handler = async (event) => {
         loccountrycode: player.loccountrycode || null,
       },
       level,
+      badges,
       games,
       recent,
       friends,
       privacy: {
         games: gamesPrivacy,
         friends: friendsPrivacy,
+        badges: badgesPrivacy,
       },
     };
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    };
+    return json(200, payload, origin, {
+
+      "Cache-Control": `public, max-age=${CACHE_SECONDS}`,
+    });
   } catch (e) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Error interno.", detail: e.message }),
-    };
+    return json(500, { error: "Error interno." }, event.headers?.origin || "");
   }
 };

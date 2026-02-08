@@ -43,7 +43,7 @@
         <div class="absolute inset-0 bg-gradient-to-b from-zinc-950/40 via-zinc-950/60 to-zinc-950"></div>
     </div>
     <!-- MAIN -->
-    <main class="z-10 relative max-w-4xl mx-auto mt-24 mb-24 p-6 flex-1 w-full">
+    <main class="z-10 relative max-w-4xl mx-auto pb-20 mt-24 mb-24 p-6 flex-1 w-full">
         <header class="mb-8">
             <div class="flex items-center justify-between gap-4">
                 <!-- Badge -->
@@ -91,16 +91,12 @@
         <!-- Search / form -->
         <section class="reveal delay-3 border-flow soft-glow relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]
          p-4 sm:p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,.35)]
-         hover:border-white/15 transition lift">
-
-            <!-- subtle top glow -->
+         hover:border-white/15 transition lift" aria-label="Buscador de perfiles de Steam">
             <div class="pointer-events-none absolute -top-24 left-1/2 h-48 w-[520px] -translate-x-1/2
-              bg-gradient-to-r from-emerald-400/0 via-cyan-400/18 to-violet-400/0 blur-3xl">
-            </div>
-            <form id="form" class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              bg-gradient-to-r from-emerald-400/0 via-cyan-400/18 to-violet-400/0 blur-3xl"></div>
+            <form id="form" class="flex flex-col sm:flex-row gap-3 sm:gap-4" novalidate>
                 <div class="flex-1 relative">
-                    <!-- icon -->
-                    <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-400">
+                    <div class="pointer-events-none absolute left-3 top-3 text-zinc-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2">
                             <path d="M21 21l-4.3-4.3" />
@@ -108,39 +104,45 @@
                         </svg>
                     </div>
 
-                    <!-- input -->
-                    <input id="steamInput" autocomplete="off" data-i18n-placeholder="inputPlaceholder"
+                    <input id="steamInput" name="steam" type="text" required maxlength="120" autocomplete="off"
+                        spellcheck="false" inputmode="url" autocapitalize="none"
+                        aria-label="Introduce vanity, SteamID64 o URL de Steam"
+                        aria-describedby="steamHint charCount msg" data-i18n-placeholder="inputPlaceholder"
                         placeholder="vanity / steamid64 / url" class="w-full rounded-xl bg-zinc-950/45 border border-white/10 pl-11 pr-4 py-3
                text-zinc-100 placeholder:text-zinc-500 outline-none
                shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
                focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/25
                hover:bg-zinc-950/55 transition" />
 
-                    <!-- bottom glow -->
                     <div class="pointer-events-none absolute inset-x-6 -bottom-3 h-6
-                  bg-gradient-to-r from-emerald-400/0 via-cyan-400/18 to-violet-400/0 blur-xl">
+                  bg-gradient-to-r from-emerald-400/0 via-cyan-400/18 to-violet-400/0 blur-xl"></div>
+                    <div class="mt-2 flex items-center justify-between">
+                        <button id="steamHelpBtn" type="button" data-i18n="helpBtn"
+                            class="text-xs text-zinc-500 hover:text-zinc-300 transition underline-offset-4 hover:underline">
+                            ¿Dónde encuentro mi perfil de Steam?
+                        </button>
+
+                        <p id="charCount" class="text-xs text-zinc-500 tabular-nums" aria-live="polite">
+                            0 / 120
+                        </p>
                     </div>
                 </div>
-
-                <!-- button -->
                 <button id="btn" type="submit" class="group relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-sm
              text-zinc-950 bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300
              shadow-[0_14px_50px_rgba(34,211,238,.18)]
              hover:brightness-110 active:brightness-95 transition lift
-             disabled:opacity-50 disabled:cursor-not-allowed">
-
-                    <!-- shine -->
-                    <span class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition">
+             disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Buscar perfil">
+                    <span class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition"
+                        aria-hidden="true">
                         <span class="absolute -left-1/2 top-0 h-full w-1/2 rotate-12
                      bg-gradient-to-r from-white/0 via-white/35 to-white/0 blur-md
-                     translate-x-0 group-hover:translate-x-[220%] transition duration-700">
-                        </span>
+                     translate-x-0 group-hover:translate-x-[220%] transition duration-700"></span>
                     </span>
-
                     <span class="relative" data-i18n="btnGenerate">Buscar</span>
                 </button>
             </form>
-            <div id="msg" class="mt-3 text-sm text-zinc-400"></div>
+            <div id="msg" class="mt-3 text-sm text-zinc-400" role="status" aria-live="polite"></div>
+
         </section>
 
         <!-- Profile Card -->
@@ -277,6 +279,9 @@
                 Algunos juegos completados al 100% pueden no detectarse automáticamente.
             </p>
         </section>
+        <p data-i18n="steamTrademark" class="text-xs text-zinc-500 mt-4 reveal delay-2">
+            Steam® is a trademark of Valve Corporation. This project is not affiliated with Valve.
+        </p>
     </main>
 
     <!-- FOOTER -->
@@ -304,6 +309,7 @@
                     <p data-i18n="footDescription" class="text-white/70 text-sm leading-relaxed max-w-md">
                         Web que muestra información pública de perfiles de Steam.
                     </p>
+
                     <div class="flex flex-row gap-3 pt-1">
                         <a href="https://guilleodev.netlify.app/"
                             class="shimmer border-flow lift inline-flex items-center justify-center gap-3 rounded-xl px-3 py-1 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-white/25 transition shadow-sm text-white"
@@ -322,8 +328,8 @@
                             aria-label="Abrir GitHub">
 
                             <div class="flex items-center gap-1">
-                                <img class="w-6 h-6 opacity-90 group-hover:opacity-100" src="assets/img/logoGithubWhite.png"
-                                    alt="" loading="lazy" />
+                                <img class="w-6 h-6 opacity-90 group-hover:opacity-100"
+                                    src="assets/img/logoGithubWhite.png" alt="" loading="lazy" />
                                 <div>
                                     <p class="text-white text-sm font-semibold leading-tight text-xs">GitHub</p>
                                 </div>
@@ -336,8 +342,8 @@
                             aria-label="Abrir LinkedIn">
 
                             <div class="flex items-center gap-1">
-                                <img class="w-6 h-6 opacity-90 group-hover:opacity-100" src="assets/img/logoLinkedin.PNG"
-                                    alt="" loading="lazy" />
+                                <img class="w-6 h-6 opacity-90 group-hover:opacity-100"
+                                    src="assets/img/logoLinkedin.PNG" alt="" loading="lazy" />
                                 <div>
                                     <p class="text-white text-sm font-semibold leading-tight text-xs">LinkedIn</p>
                                 </div>
@@ -361,6 +367,32 @@
             </div>
         </div>
     </footer>
+    <!-- Help modal -->
+    <div id="steamHelpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="relative mx-4 w-full max-w-sm rounded-2xl border border-white/10
+              bg-zinc-950 p-5 shadow-2xl">
+            <button id="closeSteamHelp" class="absolute right-3 top-3 rounded-full bg-white/10 p-2 text-zinc-300">
+                ✕
+            </button>
+            <h3 class="text-lg font-bold mb-2" data-i18n="helpTitle">
+                ¿Cómo encontrar tu perfil de Steam?
+            </h3>
+            <p class="text-sm text-zinc-400 mb-4" data-i18n="helpDesc">
+                Lo más fácil es copiar la URL del perfil desde el navegador.
+            </p>
+            <img id="steamHelpImg" src="/assets/img/steam-help-es.png" alt="Cómo encontrar la URL del perfil de Steam"
+                class="w-full rounded-xl border border-white/10 mb-4" loading="lazy" />
+            <div class="space-y-2 text-sm text-zinc-400">
+                <p data-i18n="helpLine1">/id/tuNombre → vanity</p>
+                <p data-i18n="helpLine2">/profiles/7656… → SteamID64</p>
+            </div>
+            <button id="confirmSteamHelp" class="mt-5 w-full rounded-xl bg-gradient-to-r
+             from-emerald-400 via-cyan-400 to-violet-400
+             px-4 py-3 text-sm font-semibold text-zinc-950" data-i18n="helpOk">
+                Entendido
+            </button>
+        </div>
+    </div>
     <!-- Tooltip fix -->
     <div id="globalTooltip"
         class="fixed z-[99999] hidden w-[280px] rounded-xl border border-white/10 bg-zinc-950/95 p-2 text-xs text-zinc-200 shadow-xl">
@@ -368,4 +400,5 @@
     <!-- JS -->
     <script src="./app.js"></script>
 </body>
+
 </html>

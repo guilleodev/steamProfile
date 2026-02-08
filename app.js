@@ -53,6 +53,19 @@ const compareRight = document.querySelector("#compareRight");
 const compareSummary = document.querySelector("#compareSummary");
 const compareNote = document.querySelector("#compareNote");
 
+// ===== Steam help modal =====
+const steamHelpBtn = document.querySelector("#steamHelpBtn");
+const steamHelpModal = document.querySelector("#steamHelpModal");
+const closeSteamHelp = document.querySelector("#closeSteamHelp");
+const confirmSteamHelp = document.querySelector("#confirmSteamHelp");
+
+// Search count
+const charCount = document.querySelector("#charCount");
+
+input.addEventListener("input", () => {
+  charCount.textContent = `${input.value.length} / 120`;
+});
+
 // ===== i18n =====
 const I18N = {
   es: {
@@ -65,6 +78,7 @@ const I18N = {
     loading: "Cargando...",
     ready: "Listo",
     writeUser: "Escribe un usuario, SteamID64 o URL.",
+    steamTrademark: "Steam® es una marca comercial de Valve Corporation. Este proyecto no está afiliado a Valve.",
 
     // Card labels
     labelCountry: "País",
@@ -99,7 +113,7 @@ const I18N = {
     achPrivate: "Biblioteca privada: Steam no permite analizar logros.",
     achNoGames: "No hay juegos disponibles para analizar.",
     achReady: (n) => `Listo para analizar ${n} juegos.`,
-    achFound: (n) => `Listo ✅ Juegos al 100% encontrados: ${n}`,
+    achFound: (n) => `Listo · Juegos al 100% encontrados: ${n}`,
     achNone: "No se encontraron juegos al 100% en tu biblioteca.",
     achProgress: (found) => `Analizando... 100% encontrados: ${found}`,
     achNoSteamid: "No se encontró steamid.",
@@ -117,7 +131,15 @@ const I18N = {
     footWeb: "Desarrollador web · Diseño web · UI",
     footDescription: "Web que muestra información pública de perfiles de Steam.",
     footSocial: "Redes",
-    footRights: "GuilleODEV. Todos los derechos reservados."
+    footRights: "GuilleODEV. Todos los derechos reservados.",
+
+    // Help
+    helpBtn: "¿Dónde encuentro mi perfil de Steam?",
+    helpTitle: "¿Cómo encontrar tu perfil de Steam?",
+    helpDesc: 'Lo más fácil es copiar la <span class="text-zinc-200 font-medium">URL del perfil</span> desde el navegador.',
+    helpLine1: '<span class="text-zinc-200 font-medium">/id/tuNombre</span> → vanity',
+    helpLine2: '<span class="text-zinc-200 font-medium">/profiles/7656…</span> → SteamID64',
+    helpOk: "Entendido"
   },
 
   en: {
@@ -130,6 +152,7 @@ const I18N = {
     loading: "Loading...",
     ready: "Done",
     writeUser: "Type a user, SteamID64 or URL.",
+    steamTrademark: "Steam® is a trademark of Valve Corporation. This project is not affiliated with Valve.",
 
     labelCountry: "Country",
     labelLast: "Last seen",
@@ -167,7 +190,7 @@ const I18N = {
     achBatchWarn: (msg) => `Warning: ${msg} (continuing...)`,
     achNote: "Steam does not expose all achievements through its public API. Some 100% completed games may not be detected automatically.",
     achStarting: "Starting analysis...",
-    achievements100Label: (unlocked, total) => `Achievements (100%): ${unlocked}/${total}`,
+    achievements100Label: (unlocked, total) => `Ach. (100%): ${unlocked}/${total}`,
     clickToOpenSteam: "Click to open on Steam",
     last2Weeks: (hours) => `Last 2 weeks: ${hours} h`,
     totalLabel: "Total",
@@ -177,7 +200,15 @@ const I18N = {
     footWeb: "Web developer · Web design · UI",
     footDescription: "Website that shows public information about Steam profiles.",
     footSocial: "Social Media",
-    footRights: "GuilleODEV. All rights reserved."
+    footRights: "GuilleODEV. All rights reserved.",
+
+    // Help
+    helpBtn: "Where do I find my Steam profile?",
+    helpTitle: "How to find your Steam profile?",
+    helpDesc: 'Easiest way: copy your <span class="text-zinc-200 font-medium">profile URL</span> from the browser.',
+    helpLine1: '<span class="text-zinc-200 font-medium">/id/yourName</span> → vanity',
+    helpLine2: '<span class="text-zinc-200 font-medium">/profiles/7656…</span> → SteamID64',
+    helpOk: "Got it"
   }
 };
 
@@ -194,7 +225,8 @@ function applyI18n() {
 
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
-    if (key === "intro") el.innerHTML = t(key);
+    const htmlKeys = new Set(["intro", "helpDesc", "helpLine1", "helpLine2"]);
+    if (htmlKeys.has(key)) el.innerHTML = t(key);
     else el.textContent = t(key);
   });
 
@@ -205,6 +237,14 @@ function applyI18n() {
 
   const btnSpan = document.querySelector("#btn [data-i18n='btnGenerate']");
   if (btnSpan && !document.querySelector("#btn").disabled) btnSpan.textContent = t("btnGenerate");
+
+  const helpImg = document.querySelector("#steamHelpImg");
+  if (helpImg) {
+    helpImg.src = currentLang === "en" ? "/assets/img/steam-help-en.png" : "/assets/img/steam-help-es.png";
+    helpImg.alt = currentLang === "en"
+      ? "How to find your Steam profile URL"
+      : "Cómo encontrar la URL del perfil de Steam";
+  }
 }
 
 function setLang(lang) {
@@ -291,6 +331,23 @@ function hideGlobalTooltip() {
 
 window.addEventListener("scroll", hideGlobalTooltip, { passive: true });
 window.addEventListener("resize", hideGlobalTooltip);
+
+const helpBtn = document.querySelector("#helpBtn");
+
+if (helpBtn) {
+  helpBtn.addEventListener("mouseenter", () => {
+    showGlobalTooltip(helpBtn, `
+      <div class="text-zinc-200 font-semibold mb-1">Cómo introducirlo</div>
+      <div class="text-zinc-400 text-sm space-y-1">
+        <div>Lo más fácil: pega la <b>URL de tu perfil</b>.</div>
+        <div class="text-zinc-500">Ej: steamcommunity.com/id/tuNombre</div>
+        <div class="text-zinc-500">o: steamcommunity.com/profiles/7656...</div>
+        <div class="mt-2 text-zinc-400">/id/ = vanity · /profiles/ = SteamID64</div>
+      </div>
+    `);
+  });
+  helpBtn.addEventListener("mouseleave", hideGlobalTooltip);
+}
 
 // ===== Animations (UI) =====
 function animateIn(el, opts = {}) {
@@ -436,11 +493,12 @@ function renderGameRow(rank, game, extra = null, highlightTop = false) {
 
   // Text + tooltip
   const wrap = document.createElement("div");
-  wrap.className = "relative group min-w-0";
+  wrap.className = "relative group min-w-0 flex-1";
 
   const title = document.createElement("a");
   title.textContent = game.name || `App ${game.appid}`;
-  title.className = "font-semibold truncate hover:underline hover:text-cyan-300";
+  title.className =
+    "block min-w-0 font-semibold truncate hover:underline hover:text-cyan-300";
 
   if (game.appid) {
     const tooltipHTML = `
@@ -478,7 +536,7 @@ function renderGameRow(rank, game, extra = null, highlightTop = false) {
 
   if (extra) {
     const ex = document.createElement("div");
-    ex.className = "text-xs text-zinc-400 mt-1 truncate";
+    ex.className = "block min-w-0 text-xs text-zinc-400 mt-1 truncate";
     ex.textContent = extra;
     wrap.appendChild(ex);
   }
@@ -725,3 +783,28 @@ if (btnAchievements) {
 // Footer
 const yearEl = document.querySelector("#year");
 if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+// Modal Help
+
+function openSteamHelp() {
+  steamHelpModal.classList.remove("hidden");
+  steamHelpModal.classList.add("flex");
+  document.body.style.overflow = "hidden";
+}
+
+function closeSteamHelpModal() {
+  steamHelpModal.classList.add("hidden");
+  steamHelpModal.classList.remove("flex");
+  document.body.style.overflow = "";
+}
+
+if (steamHelpBtn) steamHelpBtn.addEventListener("click", openSteamHelp);
+if (closeSteamHelp) closeSteamHelp.addEventListener("click", closeSteamHelpModal);
+if (confirmSteamHelp) confirmSteamHelp.addEventListener("click", closeSteamHelpModal);
+
+// cerrar al clickar fuera
+if (steamHelpModal) {
+  steamHelpModal.addEventListener("click", (e) => {
+    if (e.target === steamHelpModal) closeSteamHelpModal();
+  });
+}
