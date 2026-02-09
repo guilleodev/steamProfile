@@ -1,6 +1,6 @@
 # SteamProfile <img src="https://raw.githubusercontent.com/guilleodev/steamProfile/main/assets/img/steamProfileLogo.PNG" width="25" />
 
-<p align="right">
+<p align="left">
   🌐 <a href="README.md"><strong>Leer en Español</strong></a>
 </p>
 
@@ -8,7 +8,7 @@
   <img src="https://raw.githubusercontent.com/guilleodev/steamProfile/main/assets/img/capturaSteamProfile2-en.png" width="700" />
 </a>
 
-Steam User is a web application that allows you to search Steam profiles and view user information such as online status, SteamID, last seen, country, Steam level, total games, playtime, and friends list.
+Steam Profile is a web application that allows you to search Steam profiles and view user information such as online status, SteamID, last seen, country, Steam level, total games, playtime, and friends list.
 
 In addition, the application analyzes the user’s library to detect and display games completed at 100%.
 
